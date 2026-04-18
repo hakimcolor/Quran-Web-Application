@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { FiSearch } from 'react-icons/fi';
+import { FaQuran } from 'react-icons/fa';
+import { MdOutlineEditNote } from 'react-icons/md';
 
 async function getSurahs() {
   const res = await fetch('https://api.alquran.cloud/v1/surah', {
@@ -10,6 +14,16 @@ async function getSurahs() {
   const data = await res.json();
   return data.data;
 }
+
+/* card animation */
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.03, duration: 0.35, ease: 'easeOut' },
+  }),
+};
 
 export default function Home() {
   const [surahs, setSurahs] = useState([]);
@@ -32,22 +46,36 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50">
-      {/* Hero */}
-      <div className="text-center py-10 px-4">
+      {/* hero */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-center py-10 px-4"
+      >
+        <div className="flex justify-center mb-3">
+          <FaQuran className="text-emerald-600" size={40} />
+        </div>
         <h1 className="text-4xl font-extrabold text-emerald-800 tracking-tight">
           القرآن الكريم
         </h1>
-        <p className="text-gray-500 mt-2 text-sm tracking-widest uppercase">
+        <p className="text-gray-400 mt-2 text-sm tracking-widest uppercase">
           The Holy Quran · 114 Surahs
         </p>
-      </div>
+      </motion.div>
 
-      {/* Search Bars */}
-      <div className="max-w-4xl mx-auto px-4 mb-8 flex flex-col sm:flex-row gap-3">
+      {/* search bars */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="max-w-4xl mx-auto px-4 mb-8 flex flex-col sm:flex-row gap-3"
+      >
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            🔍
-          </span>
+          <FiSearch
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={15}
+          />
           <input
             type="text"
             placeholder="Search surah name..."
@@ -57,9 +85,10 @@ export default function Home() {
           />
         </div>
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            ✏️
-          </span>
+          <MdOutlineEditNote
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search by ayah count (e.g. 7, 286)..."
@@ -68,38 +97,51 @@ export default function Home() {
             className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400 text-sm"
           />
         </div>
-      </div>
+      </motion.div>
 
-      {/* Grid */}
+      {/* grid */}
       <div className="max-w-4xl mx-auto px-4 pb-12">
         {filtered.length === 0 ? (
           <p className="text-center text-gray-400 py-20">No surahs found.</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {filtered.map((s) => (
-              <Link href={`/surah/${s.number}`} key={s.number}>
-                <div className="h-36 flex flex-col justify-between bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-emerald-300 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
-                  <div className="flex justify-between items-start">
-                    <span className="w-7 h-7 flex items-center justify-center bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
-                      {s.number}
-                    </span>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                      {s.numberOfAyahs}
-                    </span>
+            {filtered.map((s, i) => (
+              <motion.div
+                key={s.number}
+                custom={i}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover={{
+                  scale: 1.03,
+                  boxShadow: '0 6px 24px rgba(0,0,0,0.10)',
+                }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <Link href={`/surah/${s.number}`}>
+                  <div className="h-36 flex flex-col justify-between bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-emerald-300 transition-all duration-200 cursor-pointer">
+                    <div className="flex justify-between items-start">
+                      <span className="w-7 h-7 flex items-center justify-center bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
+                        {s.number}
+                      </span>
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                        {s.numberOfAyahs}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="arabic-text text-xl text-emerald-700 text-right leading-snug">
+                        {s.name}
+                      </p>
+                      <p className="text-xs font-semibold text-gray-700 mt-1 truncate">
+                        {s.englishName}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {s.englishNameTranslation}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="arabic-text text-xl text-emerald-700 text-right leading-snug">
-                      {s.name}
-                    </p>
-                    <p className="text-xs font-semibold text-gray-700 mt-1 truncate">
-                      {s.englishName}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate">
-                      {s.englishNameTranslation}
-                    </p>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </motion.div>
             ))}
           </div>
         )}

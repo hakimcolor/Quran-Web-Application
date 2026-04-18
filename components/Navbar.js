@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FaQuran } from 'react-icons/fa';
 
 export default function Navbar() {
   return (
@@ -6,11 +7,12 @@ export default function Navbar() {
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         <Link
           href="/"
-          className="text-xl font-bold tracking-wide hover:opacity-90"
+          className="flex items-center gap-2 text-xl font-bold hover:opacity-90 transition"
         >
-          🕌 Quran App
+          <FaQuran size={20} />
+          <span>Quran App</span>
         </Link>
-        <span className="text-sm opacity-75">Read · Reflect · Remember</span>
+        <span className="text-sm opacity-60">Read · Reflect · Remember</span>
       </div>
     </nav>
   );
