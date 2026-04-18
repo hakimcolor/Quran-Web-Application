@@ -2,7 +2,6 @@ import SurahClient from './SurahClient';
 
 async function getSurah(id) {
   try {
-    // Fetch Arabic + English translation in parallel
     const [arabicRes, translationRes] = await Promise.all([
       fetch(`https://api.alquran.cloud/v1/surah/${id}`, { cache: 'no-store' }),
       fetch(`https://api.alquran.cloud/v1/surah/${id}/en.asad`, {
@@ -16,7 +15,6 @@ async function getSurah(id) {
     const surah = arabicData.data;
     const translations = translationData.data?.ayahs ?? [];
 
-    // Merge translation into each ayah
     surah.ayahs = surah.ayahs.map((ayah, i) => ({
       ...ayah,
       translation: translations[i]?.text ?? '',

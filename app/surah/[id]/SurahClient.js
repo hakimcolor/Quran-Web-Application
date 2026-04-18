@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,14 +14,16 @@ import {
 } from 'react-icons/fi';
 import { FaQuran } from 'react-icons/fa';
 
-/* helpers */
+/* strip Arabic diacritics for matching */
 const stripDiacritics = (s) =>
   s.replace(
     /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g,
     ''
   );
+
 const isArabic = (s) => /[\u0600-\u06FF]/.test(s);
 const escRx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 function highlight(text, q) {
   if (!q.trim()) return text;
   try {
@@ -34,7 +36,6 @@ function highlight(text, q) {
   }
 }
 
-/* card animation variants */
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: (i) => ({
@@ -47,18 +48,19 @@ const cardVariants = {
 export default function SurahClient({ surah }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [fontSize, setFontSize] = useState(24);
-  const [theme, setTheme] = useState('light');
+  const [fontSize, setFontSize] = useState(() =>
+    typeof window !== 'undefined'
+      ? Number(localStorage.getItem('fontSize') || 24)
+      : 24
+  );
+  const [theme, setTheme] = useState(() =>
+    typeof window !== 'undefined'
+      ? localStorage.getItem('theme') || 'light'
+      : 'light'
+  );
   const [scrollPct, setScrollPct] = useState(0);
-  const contentRef = useRef(null);
 
-  /* restore settings */
-  useEffect(() => {
-    const s = localStorage.getItem('fontSize');
-    if (s) setFontSize(Number(s));
-    const t = localStorage.getItem('theme');
-    if (t) setTheme(t);
-  }, []);
+  /* persist on change */
 
   useEffect(() => {
     localStorage.setItem('fontSize', fontSize);
@@ -67,7 +69,7 @@ export default function SurahClient({ surah }) {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  /* scroll progress */
+  /* scroll progress tracker */
   const handleScroll = useCallback(() => {
     const el = document.documentElement;
     const pct = Math.round(
@@ -88,7 +90,7 @@ export default function SurahClient({ surah }) {
       </div>
     );
 
-  /* filter ayahs */
+  /* filter by Arabic or English */
   const filtered = surah.ayahs.filter((a) => {
     if (!search.trim()) return true;
     if (isArabic(search))
@@ -96,7 +98,7 @@ export default function SurahClient({ surah }) {
     return a.translation?.toLowerCase().includes(search.trim().toLowerCase());
   });
 
-  /* download surah as txt */
+  /* download full surah as .txt */
   const downloadSurah = () => {
     const lines = [
       `${surah.englishName} — ${surah.englishNameTranslation}`,
@@ -147,43 +149,39 @@ export default function SurahClient({ surah }) {
       </div>
 
       {/* sticky top bar */}
-      <div className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-gray-100 shadow-sm px-4 py-3">
-        <div className="max-w-3xl mx-auto flex items-center gap-2 flex-wrap">
+      <div className="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-gray-100 shadow-sm">
+        {/* row 1: controls */}
+        <div className="max-w-3xl mx-auto flex items-center gap-1.5 px-2 py-2 sm:px-4 sm:py-3 sm:gap-2">
           {/* back */}
           <button
             onClick={() => router.back()}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 cursor-pointer text-white shadow transition shrink-0"
             aria-label="Go back"
+            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow transition shrink-0 cursor-pointer"
           >
-            <FiArrowLeft size={16} />
+            <FiArrowLeft size={15} />
           </button>
 
           {/* surah info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <FaQuran className="text-emerald-600" size={14} />
-              <span className="text-sm font-bold text-emerald-800">
-                {surah.englishName}
-              </span>
-              <span className="text-xs text-gray-400">
-                {surah.englishNameTranslation}
-              </span>
-              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                {surah.numberOfAyahs} ayahs
-              </span>
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                {surah.revelationType}
-              </span>
-            </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <FaQuran className="text-emerald-600 shrink-0" size={12} />
+            <span className="text-xs sm:text-sm font-bold text-emerald-800 truncate">
+              {surah.englishName}
+            </span>
+            <span className="text-xs text-gray-400 hidden sm:inline">
+              {surah.englishNameTranslation}
+            </span>
+            <span className="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full hidden sm:inline">
+              {surah.numberOfAyahs}
+            </span>
           </div>
 
           {/* arabic name */}
-          <p className="arabic-text text-xl text-emerald-700 shrink-0">
+          <p className="arabic-text text-base sm:text-xl text-emerald-700 shrink-0">
             {surah.name}
           </p>
 
           {/* scroll % */}
-          <span className="text-xs font-mono bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1 rounded-lg shrink-0">
+          <span className="text-xs font-mono bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-lg shrink-0">
             {scrollPct}%
           </span>
 
@@ -191,61 +189,65 @@ export default function SurahClient({ surah }) {
           <div className="flex gap-1 shrink-0">
             <button
               onClick={() => setTheme('light')}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${theme === 'light' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-400 border-gray-200'}`}
+              aria-label="Light mode"
+              className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border transition cursor-pointer ${theme === 'light' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-400 border-gray-200'}`}
             >
-              <FiSun size={14} />
+              <FiSun size={13} />
             </button>
             <button
               onClick={() => setTheme('gray')}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${theme === 'gray' ? 'bg-gray-500 text-white border-gray-500' : 'bg-white text-gray-400 border-gray-200'}`}
+              aria-label="Gray mode"
+              className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border transition cursor-pointer ${theme === 'gray' ? 'bg-gray-500 text-white border-gray-500' : 'bg-white text-gray-400 border-gray-200'}`}
             >
-              <FiCloud size={14} />
+              <FiCloud size={13} />
             </button>
           </div>
 
           {/* font size */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0">
             <button
               onClick={() => setFontSize((f) => Math.max(16, f - 2))}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+              aria-label="Decrease font"
+              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition cursor-pointer"
             >
-              <FiMinus size={12} />
+              <FiMinus size={11} />
             </button>
-            <span className="text-xs font-mono w-8 text-center text-gray-600">
+            <span className="text-xs font-mono w-6 text-center text-gray-500">
               {fontSize}
             </span>
             <button
               onClick={() => setFontSize((f) => Math.min(40, f + 2))}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+              aria-label="Increase font"
+              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition cursor-pointer"
             >
-              <FiPlus size={12} />
+              <FiPlus size={11} />
             </button>
           </div>
 
           {/* download */}
           <button
             onClick={downloadSurah}
-            className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-2 cursor-pointer rounded-lg shadow transition shrink-0"
             aria-label="Download surah"
+            className="w-7 h-7 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 flex items-center justify-center sm:gap-1 bg-teal-600 hover:bg-teal-700 text-white text-xs rounded-lg shadow transition shrink-0 cursor-pointer"
           >
             <FiDownload size={13} />
-            <span>Download</span>
+            <span className="hidden sm:inline">Download</span>
           </button>
         </div>
 
-        {/* search */}
-        <div className="max-w-3xl mx-auto mt-2 relative">
+        {/* row 2: search */}
+        <div className="max-w-3xl mx-auto px-2 pb-2 sm:px-4 sm:pb-3 relative">
           <FiSearch
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            size={14}
+            className="absolute left-5 sm:left-7 top-1/2 -translate-y-1/2 text-gray-400"
+            size={13}
           />
           <input
             type="text"
             dir="auto"
-            placeholder="اكتب عربي · Type English to search translation..."
+            placeholder="اكتب عربي · Type English..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className={`w-full pl-9 pr-4 py-2 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 ${t.input}`}
+            className={`w-full pl-8 pr-3 py-1.5 sm:py-2 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 ${t.input}`}
           />
         </div>
 
@@ -256,39 +258,33 @@ export default function SurahClient({ surah }) {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="max-w-3xl mx-auto mt-1 text-xs text-gray-400 px-1"
+              className="max-w-3xl mx-auto px-3 pb-1.5 text-xs text-gray-400"
             >
-              {filtered.length} ayah{filtered.length !== 1 ? 's' : ''} found ·{' '}
-              {isArabic(search)
-                ? 'searching Arabic'
-                : 'searching English translation'}
+              {filtered.length} ayah{filtered.length !== 1 ? 's' : ''} ·{' '}
+              {isArabic(search) ? 'Arabic' : 'English'}
             </motion.p>
           )}
         </AnimatePresence>
       </div>
 
-      {/* content */}
-      <div ref={contentRef} className="max-w-3xl mx-auto px-4 py-6">
+      {/* main content */}
+      <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6">
         {/* bismillah */}
         {surah.number !== 1 && surah.number !== 9 && (
           <motion.p
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="arabic-text text-center text-3xl text-emerald-700 mb-8 py-4 bg-white/60 rounded-2xl shadow-sm"
+            className="arabic-text text-center text-2xl sm:text-3xl text-emerald-700 mb-8 py-4 bg-white/60 rounded-2xl shadow-sm"
           >
             بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
           </motion.p>
         )}
 
         {filtered.length === 0 ? (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center text-gray-400 py-20"
-          >
+          <p className="text-center text-gray-400 py-20">
             No ayahs match your search.
-          </motion.p>
+          </p>
         ) : (
           <div className="flex flex-col gap-4">
             {filtered.map((ayah, i) => (
@@ -302,16 +298,16 @@ export default function SurahClient({ surah }) {
                   scale: 1.01,
                   boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}
-                className={`rounded-2xl border p-5 shadow-sm cursor-default ${t.card}`}
+                className={`rounded-2xl border p-4 sm:p-5 shadow-sm ${t.card}`}
               >
-                {/* ayah number */}
+                {/* ayah number badge */}
                 <div className="flex justify-end mb-3">
-                  <span className="w-8 h-8 flex items-center justify-center bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
+                  <span className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
                     {ayah.numberInSurah}
                   </span>
                 </div>
 
-                {/* arabic */}
+                {/* arabic text */}
                 <p
                   className="arabic-text text-right leading-loose text-gray-900"
                   style={{ fontSize: `${fontSize}px` }}
@@ -322,10 +318,10 @@ export default function SurahClient({ surah }) {
                   }}
                 />
 
-                {/* translation */}
+                {/* english translation */}
                 {ayah.translation && (
                   <p
-                    className="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100 leading-relaxed"
+                    className="text-xs sm:text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100 leading-relaxed"
                     dangerouslySetInnerHTML={{
                       __html:
                         !isArabic(search) && search.trim()
