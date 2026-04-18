@@ -31,12 +31,21 @@ export default function SurahClient({ surah }) {
     );
   }
 
-  const filtered = surah.ayahs.filter(
-    (a) =>
-      a.text.toLowerCase().includes(search.toLowerCase()) ||
-      (a.translation &&
-        a.translation.toLowerCase().includes(search.toLowerCase()))
-  );
+  // Strip Arabic diacritics for better matching
+  const stripDiacritics = (str) =>
+    str.replace(
+      /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g,
+      ''
+    );
+
+  const filtered = surah.ayahs.filter((a) => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    const arabicMatch = stripDiacritics(a.text).includes(stripDiacritics(q));
+    const englishMatch =
+      a.translation && a.translation.toLowerCase().includes(q);
+    return arabicMatch || englishMatch;
+  });
 
   const themes = {
     light: {
@@ -183,15 +192,39 @@ export default function SurahClient({ surah }) {
                 <p
                   className="arabic-text text-right leading-loose text-gray-900"
                   style={{ fontSize: `${fontSize}px` }}
-                >
-                  {ayah.text}
-                </p>
+                  dangerouslySetInnerHTML={{
+                    __html: search.trim()
+                      ? stripDiacritics(ayah.text).includes(
+                          stripDiacritics(search.trim())
+                        )
+                        ? ayah.text.replace(
+                            new RegExp(
+                              `(${search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+                              'gi'
+                            ),
+                            '<mark class="bg-yellow-200 rounded px-0.5">$1</mark>'
+                          )
+                        : ayah.text
+                      : ayah.text,
+                  }}
+                />
 
                 {/* Translation */}
                 {ayah.translation && (
-                  <p className="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100 leading-relaxed">
-                    {ayah.translation}
-                  </p>
+                  <p
+                    className="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100 leading-relaxed"
+                    dangerouslySetInnerHTML={{
+                      __html: search.trim()
+                        ? ayah.translation.replace(
+                            new RegExp(
+                              `(${search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+                              'gi'
+                            ),
+                            '<mark class="bg-yellow-200 rounded px-0.5">$1</mark>'
+                          )
+                        : ayah.translation,
+                    }}
+                  />
                 )}
               </div>
             ))}
