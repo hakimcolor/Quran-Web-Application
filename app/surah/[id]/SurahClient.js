@@ -5,6 +5,14 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 
 export default function SurahClient({ surah }) {
+  if (!surah || !surah.ayahs) {
+    return (
+      <div className="text-center py-20 text-red-500">
+        Surah data unavailable.
+      </div>
+    );
+  }
+
   const [search, setSearch] = useState('');
   const [fontSize, setFontSize] = useState(20);
   const [darkMode, setDarkMode] = useState(false);
