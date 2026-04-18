@@ -6,20 +6,19 @@ import { useRouter } from 'next/navigation';
 export default function SurahClient({ surah }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [fontSize, setFontSize] = useState(22);
-  const [theme, setTheme] = useState('light'); // 'light' | 'gray'
+  const [fontSize, setFontSize] = useState(24);
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
-    const savedSize = localStorage.getItem('fontSize');
-    if (savedSize) setFontSize(Number(savedSize));
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) setTheme(savedTheme);
+    const s = localStorage.getItem('fontSize');
+    if (s) setFontSize(Number(s));
+    const t = localStorage.getItem('theme');
+    if (t) setTheme(t);
   }, []);
 
   useEffect(() => {
     localStorage.setItem('fontSize', fontSize);
   }, [fontSize]);
-
   useEffect(() => {
     localStorage.setItem('theme', theme);
   }, [theme]);
@@ -27,146 +26,178 @@ export default function SurahClient({ surah }) {
   if (!surah || !surah.ayahs) {
     return (
       <div className="text-center py-20 text-red-500">
-        Failed to load surah. Please refresh.
+        Failed to load. Please refresh.
       </div>
     );
   }
 
-  const filtered = surah.ayahs.filter((a) =>
-    a.text.toLowerCase().includes(search.toLowerCase())
+  const filtered = surah.ayahs.filter(
+    (a) =>
+      a.text.toLowerCase().includes(search.toLowerCase()) ||
+      (a.translation &&
+        a.translation.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const bg =
-    theme === 'gray' ? 'bg-gray-200 text-gray-900' : 'bg-white text-gray-900';
-  const cardBg =
-    theme === 'gray'
-      ? 'bg-gray-300 border-gray-400'
-      : 'bg-gray-50 border-gray-200';
-  const inputBg =
-    theme === 'gray'
-      ? 'bg-gray-100 border-gray-400'
-      : 'bg-white border-gray-300';
+  const themes = {
+    light: {
+      page: 'bg-linear-to-br from-emerald-50 via-white to-teal-50',
+      card: 'bg-white border-gray-100',
+      input: 'bg-white border-gray-200',
+      text: 'text-gray-900',
+    },
+    gray: {
+      page: 'bg-gray-100',
+      card: 'bg-gray-200 border-gray-300',
+      input: 'bg-gray-200 border-gray-300',
+      text: 'text-gray-800',
+    },
+  };
+
+  const t = themes[theme] || themes.light;
 
   return (
-    <div className={`min-h-screen ${bg} transition-colors duration-300`}>
-      {/* Top Bar */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-        >
-          ← Back
-        </button>
+    <div className={`min-h-screen ${t.page} ${t.text}`}>
+      {/* Fixed Top Bar */}
+      <div className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-gray-100 shadow-sm px-4 py-3">
+        <div className="max-w-3xl mx-auto flex items-center gap-3 flex-wrap">
+          {/* Back Icon Button */}
+          <button
+            onClick={() => router.back()}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow transition shrink-0"
+            aria-label="Go back"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
 
-        {/* Surah Title */}
-        <div className="text-center flex-1">
-          <h1 className="text-2xl font-bold text-emerald-700">
-            {surah.englishName}
-          </h1>
-          <p className="text-sm text-gray-500">
-            {surah.englishNameTranslation} · {surah.numberOfAyahs} Ayahs ·{' '}
-            {surah.revelationType}
-          </p>
-          <p className="arabic-text text-3xl mt-1 text-emerald-800">
+          {/* Surah Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base font-bold text-emerald-800">
+                {surah.englishName}
+              </span>
+              <span className="text-xs text-gray-400">
+                {surah.englishNameTranslation}
+              </span>
+              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                {surah.numberOfAyahs} ayahs
+              </span>
+              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                {surah.revelationType}
+              </span>
+            </div>
+          </div>
+
+          {/* Arabic Name */}
+          <p className="arabic-text text-2xl text-emerald-700 shrink-0">
             {surah.name}
           </p>
-        </div>
 
-        {/* Settings */}
-        <div className="flex flex-col items-end gap-2">
-          {/* Theme Toggle */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setTheme('light')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium border transition ${
-                theme === 'light'
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-emerald-400'
-              }`}
-            >
-              ☀️ Light
-            </button>
-            <button
-              onClick={() => setTheme('gray')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium border transition ${
-                theme === 'gray'
-                  ? 'bg-gray-500 text-white border-gray-500'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              🌫️ Gray
-            </button>
+          {/* Theme Buttons */}
+          <div className="flex gap-1 shrink-0">
+            {['light', 'gray'].map((th) => (
+              <button
+                key={th}
+                onClick={() => setTheme(th)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium border transition ${
+                  theme === th
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-300'
+                }`}
+              >
+                {th === 'light' ? '☀️' : '🌫️'}
+              </button>
+            ))}
           </div>
 
           {/* Font Size */}
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>A</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-gray-400">A</span>
             <input
               type="range"
               min={16}
               max={40}
               value={fontSize}
               onChange={(e) => setFontSize(Number(e.target.value))}
-              className="w-24 accent-emerald-600"
+              className="w-20 accent-emerald-600"
             />
-            <span className="text-base font-bold">A</span>
-            <span className="font-mono text-emerald-600">{fontSize}px</span>
+            <span className="text-sm font-bold text-gray-600">A</span>
           </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="max-w-3xl mx-auto mt-2 relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+            🔍
+          </span>
+          <input
+            type="text"
+            placeholder="Search in Arabic or translation..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={`w-full pl-9 pr-4 py-2 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 ${t.input}`}
+          />
         </div>
       </div>
 
-      {/* Bismillah */}
-      {surah.number !== 1 && surah.number !== 9 && (
-        <p className="arabic-text text-center text-2xl text-emerald-700 mb-6">
-          بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-        </p>
-      )}
+      {/* Content */}
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        {/* Bismillah */}
+        {surah.number !== 1 && surah.number !== 9 && (
+          <p className="arabic-text text-center text-3xl text-emerald-700 mb-8 py-4 bg-white/60 rounded-2xl shadow-sm">
+            بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+          </p>
+        )}
 
-      {/* Search */}
-      <input
-        type="text"
-        placeholder="Search in translation..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className={`w-full border rounded-lg px-4 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-emerald-400 ${inputBg}`}
-      />
+        {filtered.length === 0 ? (
+          <p className="text-center text-gray-400 py-20">
+            No ayahs match your search.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {filtered.map((ayah) => (
+              <div
+                key={ayah.number}
+                className={`rounded-2xl border p-5 shadow-sm ${t.card}`}
+              >
+                {/* Ayah number badge */}
+                <div className="flex justify-end mb-3">
+                  <span className="w-8 h-8 flex items-center justify-center bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
+                    {ayah.numberInSurah}
+                  </span>
+                </div>
 
-      {/* Ayahs */}
-      {filtered.length === 0 ? (
-        <p className="text-center text-gray-400 py-10">
-          No ayahs match your search.
-        </p>
-      ) : (
-        filtered.map((ayah) => (
-          <div
-            key={ayah.number}
-            className={`mb-4 p-5 rounded-xl border shadow-sm ${cardBg}`}
-          >
-            {/* Ayah Number Badge */}
-            <div className="flex justify-between items-center mb-3">
-              <span className="bg-emerald-100 text-emerald-700 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-                {ayah.numberInSurah}
-              </span>
-            </div>
+                {/* Arabic */}
+                <p
+                  className="arabic-text text-right leading-loose text-gray-900"
+                  style={{ fontSize: `${fontSize}px` }}
+                >
+                  {ayah.text}
+                </p>
 
-            {/* Arabic Text */}
-            <p
-              className="arabic-text text-right leading-loose mb-3 text-gray-900"
-              style={{ fontSize: `${fontSize}px` }}
-            >
-              {ayah.text}
-            </p>
-
-            {/* Translation */}
-            {ayah.translation && (
-              <p className="text-sm text-gray-600 border-t pt-2 mt-2 leading-relaxed">
-                {ayah.translation}
-              </p>
-            )}
+                {/* Translation */}
+                {ayah.translation && (
+                  <p className="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100 leading-relaxed">
+                    {ayah.translation}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
-        ))
-      )}
+        )}
+      </div>
     </div>
   );
 }
