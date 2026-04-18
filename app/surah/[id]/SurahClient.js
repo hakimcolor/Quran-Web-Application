@@ -3,6 +3,32 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Strip Arabic diacritics
+const stripDiacritics = (str) =>
+  str.replace(
+    /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g,
+    ''
+  );
+
+// Detect Arabic input
+const isArabic = (str) => /[\u0600-\u06FF]/.test(str);
+
+// Escape regex special chars
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Highlight matched text
+function highlight(text, query) {
+  if (!query.trim()) return text;
+  try {
+    return text.replace(
+      new RegExp(`(${escapeRegex(query.trim())})`, 'gi'),
+      '<mark class="bg-yellow-200 rounded px-0.5">$1</mark>'
+    );
+  } catch {
+    return text;
+  }
+}
+
 export default function SurahClient({ surah }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -31,45 +57,38 @@ export default function SurahClient({ surah }) {
     );
   }
 
-  // Strip Arabic diacritics for better matching
-  const stripDiacritics = (str) =>
-    str.replace(
-      /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g,
-      ''
-    );
-
   const filtered = surah.ayahs.filter((a) => {
     if (!search.trim()) return true;
-    const q = search.trim().toLowerCase();
-    const arabicMatch = stripDiacritics(a.text).includes(stripDiacritics(q));
-    const englishMatch =
-      a.translation && a.translation.toLowerCase().includes(q);
-    return arabicMatch || englishMatch;
+    if (isArabic(search)) {
+      return stripDiacritics(a.text).includes(stripDiacritics(search.trim()));
+    }
+    return (
+      a.translation &&
+      a.translation.toLowerCase().includes(search.trim().toLowerCase())
+    );
   });
 
   const themes = {
     light: {
-      page: 'bg-linear-to-br from-emerald-50 via-white to-teal-50',
+      page: 'bg-gradient-to-br from-emerald-50 via-white to-teal-50',
       card: 'bg-white border-gray-100',
       input: 'bg-white border-gray-200',
-      text: 'text-gray-900',
     },
     gray: {
       page: 'bg-gray-100',
       card: 'bg-gray-200 border-gray-300',
       input: 'bg-gray-200 border-gray-300',
-      text: 'text-gray-800',
     },
   };
 
   const t = themes[theme] || themes.light;
 
   return (
-    <div className={`min-h-screen ${t.page} ${t.text}`}>
-      {/* Fixed Top Bar */}
+    <div className={`min-h-screen text-gray-900 ${t.page}`}>
+      {/* Sticky Top Bar */}
       <div className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-gray-100 shadow-sm px-4 py-3">
         <div className="max-w-3xl mx-auto flex items-center gap-3 flex-wrap">
-          {/* Back Icon Button */}
+          {/* Back Icon */}
           <button
             onClick={() => router.back()}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow transition shrink-0"
@@ -153,12 +172,22 @@ export default function SurahClient({ surah }) {
           </span>
           <input
             type="text"
-            placeholder="Search in Arabic or translation..."
+            placeholder="اكتب عربي للبحث في النص · Type English to search translation..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={`w-full pl-9 pr-4 py-2 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 ${t.input}`}
+            dir="auto"
           />
         </div>
+
+        {/* Search result count */}
+        {search.trim() && (
+          <p className="max-w-3xl mx-auto mt-1 text-xs text-gray-400 px-1">
+            {filtered.length} ayah{filtered.length !== 1 ? 's' : ''} found ·
+            searching in{' '}
+            {isArabic(search) ? 'Arabic text' : 'English translation'}
+          </p>
+        )}
       </div>
 
       {/* Content */}
@@ -188,41 +217,26 @@ export default function SurahClient({ surah }) {
                   </span>
                 </div>
 
-                {/* Arabic */}
+                {/* Arabic text */}
                 <p
                   className="arabic-text text-right leading-loose text-gray-900"
                   style={{ fontSize: `${fontSize}px` }}
                   dangerouslySetInnerHTML={{
-                    __html: search.trim()
-                      ? stripDiacritics(ayah.text).includes(
-                          stripDiacritics(search.trim())
-                        )
-                        ? ayah.text.replace(
-                            new RegExp(
-                              `(${search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
-                              'gi'
-                            ),
-                            '<mark class="bg-yellow-200 rounded px-0.5">$1</mark>'
-                          )
-                        : ayah.text
+                    __html: isArabic(search)
+                      ? highlight(ayah.text, stripDiacritics(search.trim()))
                       : ayah.text,
                   }}
                 />
 
-                {/* Translation */}
+                {/* English translation */}
                 {ayah.translation && (
                   <p
                     className="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100 leading-relaxed"
                     dangerouslySetInnerHTML={{
-                      __html: search.trim()
-                        ? ayah.translation.replace(
-                            new RegExp(
-                              `(${search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
-                              'gi'
-                            ),
-                            '<mark class="bg-yellow-200 rounded px-0.5">$1</mark>'
-                          )
-                        : ayah.translation,
+                      __html:
+                        !isArabic(search) && search.trim()
+                          ? highlight(ayah.translation, search.trim())
+                          : ayah.translation,
                     }}
                   />
                 )}

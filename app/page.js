@@ -62,7 +62,7 @@ export default function Home() {
           </span>
           <input
             type="text"
-            placeholder="Search by number of ayahs..."
+            placeholder="Search by ayah count (e.g. 7, 286)..."
             value={ayatSearch}
             onChange={(e) => setAyatSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400 text-sm"
