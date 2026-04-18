@@ -55,7 +55,7 @@ export default function Sidebar({
             <span className="text-sm">Dark Mode</span>
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`w-12 h-6 rounded-full transition-colors ${
+              className={`w-12 h-6 rounded-full transition-colors cursor-pointer ${
                 darkMode ? 'bg-emerald-500' : 'bg-gray-300'
               } relative`}
               aria-label="Toggle dark mode"

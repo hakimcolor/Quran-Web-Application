@@ -152,7 +152,7 @@ export default function SurahClient({ surah }) {
           {/* back */}
           <button
             onClick={() => router.back()}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow transition shrink-0"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 cursor-pointer text-white shadow transition shrink-0"
             aria-label="Go back"
           >
             <FiArrowLeft size={16} />
@@ -225,7 +225,7 @@ export default function SurahClient({ surah }) {
           {/* download */}
           <button
             onClick={downloadSurah}
-            className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-2 rounded-lg shadow transition shrink-0"
+            className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-2 cursor-pointer rounded-lg shadow transition shrink-0"
             aria-label="Download surah"
           >
             <FiDownload size={13} />

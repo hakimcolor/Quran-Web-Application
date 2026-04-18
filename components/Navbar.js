@@ -3,7 +3,7 @@ import { FaQuran } from 'react-icons/fa';
 
 export default function Navbar() {
   return (
-    <nav className="bg-emerald-700 text-white px-6 py-4 shadow-md">
+    <nav className="sticky top-0 z-50 bg-emerald-700 text-white px-6 py-4 shadow-md">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         <Link
           href="/"

@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch } from 'react-icons/fi';
 import { FaQuran } from 'react-icons/fa';
 import { MdOutlineEditNote } from 'react-icons/md';
+import { HiArrowUp } from 'react-icons/hi';
 
 async function getSurahs() {
   const res = await fetch('https://api.alquran.cloud/v1/surah', {
@@ -15,7 +16,6 @@ async function getSurahs() {
   return data.data;
 }
 
-/* card animation */
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i) => ({
@@ -29,9 +29,16 @@ export default function Home() {
   const [surahs, setSurahs] = useState([]);
   const [nameSearch, setNameSearch] = useState('');
   const [ayatSearch, setAyatSearch] = useState('');
+  const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
     getSurahs().then(setSurahs);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 300);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const filtered = surahs.filter((s) => {
@@ -46,12 +53,44 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-50">
+      {/* sticky search bar — sits just below the sticky navbar (top-16) */}
+      <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm px-4 py-3">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <FiSearch
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={15}
+            />
+            <input
+              type="text"
+              placeholder="Search surah name..."
+              value={nameSearch}
+              onChange={(e) => setNameSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
+            />
+          </div>
+          <div className="relative flex-1">
+            <MdOutlineEditNote
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Search by ayah count (e.g. 7, 286)..."
+              value={ayatSearch}
+              onChange={(e) => setAyatSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-400 text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* hero */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-center py-10 px-4"
+        className="text-center py-8 px-4"
       >
         <div className="flex justify-center mb-3">
           <FaQuran className="text-emerald-600" size={40} />
@@ -64,43 +103,8 @@ export default function Home() {
         </p>
       </motion.div>
 
-      {/* search bars */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-        className="max-w-4xl mx-auto px-4 mb-8 flex flex-col sm:flex-row gap-3"
-      >
-        <div className="relative flex-1">
-          <FiSearch
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            size={15}
-          />
-          <input
-            type="text"
-            placeholder="Search surah name..."
-            value={nameSearch}
-            onChange={(e) => setNameSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
-          />
-        </div>
-        <div className="relative flex-1">
-          <MdOutlineEditNote
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search by ayah count (e.g. 7, 286)..."
-            value={ayatSearch}
-            onChange={(e) => setAyatSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400 text-sm"
-          />
-        </div>
-      </motion.div>
-
-      {/* grid */}
-      <div className="max-w-4xl mx-auto px-4 pb-12">
+      {/* surah grid */}
+      <div className="max-w-4xl mx-auto px-4 pb-20">
         {filtered.length === 0 ? (
           <p className="text-center text-gray-400 py-20">No surahs found.</p>
         ) : (
@@ -146,6 +150,22 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* scroll to top — appears after 300px scroll */}
+      <AnimatePresence>
+        {showTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-6 right-6 w-11 h-11 flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg z-50 transition"
+            aria-label="Scroll to top"
+          >
+            <HiArrowUp size={18} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
