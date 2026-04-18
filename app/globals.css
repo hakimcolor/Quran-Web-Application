@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  --font-size: 20px;
+}
+
+body {
+  font-family: 'Geist', sans-serif;
+}
+
+.arabic-text {
+  font-family: 'Amiri', serif;
+}
+
+.dark body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
