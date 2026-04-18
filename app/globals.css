@@ -6,11 +6,20 @@
 }
 
 body {
-  font-family: 'Geist', sans-serif;
+  /* Adding standard system fonts as fallback */
+  font-family:
+    'Geist',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .arabic-text {
+  /* Ensuring proper right-to-left flow and font scaling */
   font-family: 'Amiri', serif;
+  direction: rtl;
+  line-height: 1.8;
 }
 
 .dark body {
